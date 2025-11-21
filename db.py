@@ -16,11 +16,28 @@ from sqlalchemy import (
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import declarative_base, sessionmaker
 
+# Try to import streamlit for secrets (available on Streamlit Cloud)
+try:
+    import streamlit as st
+    STREAMLIT_AVAILABLE = True
+except ImportError:
+    STREAMLIT_AVAILABLE = False
+
 # Default connection string for local development.
-# Replace password/host/port as needed or provide DATABASE_URL env var.
+# Replace password/host/port as needed or provide DATABASE_URL env var or Streamlit secret.
 DEFAULT_DATABASE_URL = "postgresql+psycopg2://postgres:postgres@localhost:5432/civicguardian"
 
-DATABASE_URL = os.getenv("DATABASE_URL", DEFAULT_DATABASE_URL)
+# Get DATABASE_URL from Streamlit secrets (for Streamlit Cloud) or environment variable
+if STREAMLIT_AVAILABLE:
+    try:
+        # Check Streamlit secrets first (for Streamlit Cloud)
+        DATABASE_URL = st.secrets.get("DATABASE_URL", os.getenv("DATABASE_URL", DEFAULT_DATABASE_URL))
+    except (AttributeError, FileNotFoundError, KeyError):
+        # Fallback to environment variable if secrets not available
+        DATABASE_URL = os.getenv("DATABASE_URL", DEFAULT_DATABASE_URL)
+else:
+    # Fallback to environment variable if Streamlit not available
+    DATABASE_URL = os.getenv("DATABASE_URL", DEFAULT_DATABASE_URL)
 
 engine = create_engine(DATABASE_URL, pool_pre_ping=True, future=True)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)

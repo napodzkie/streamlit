@@ -190,7 +190,27 @@ st.markdown("""
 try:
     init_db()
 except SQLAlchemyError as exc:
+    error_msg = str(exc)
     st.error(f"Database initialization failed: {exc}")
+    
+    # Provide helpful guidance for Streamlit Cloud users
+    if "localhost" in error_msg or "127.0.0.1" in error_msg or "Connection refused" in error_msg:
+        st.warning("""
+        🔴 **Connection Error Detected**
+        
+        It looks like you're trying to connect to `localhost`, which won't work on Streamlit Cloud.
+        
+        **For Streamlit Cloud deployment:**
+        1. Set up a cloud PostgreSQL database (Supabase, ElephantSQL, Neon, etc.)
+        2. Go to your app settings on share.streamlit.io
+        3. Add your database connection string to **Secrets** → **Edit secrets**:
+           ```toml
+           DATABASE_URL = "postgresql+psycopg2://user:pass@host:port/database"
+           ```
+        4. Restart your app
+        
+        See `STREAMLIT_CLOUD_SETUP.md` for detailed instructions.
+        """)
     st.stop()
 
 # Shared incident mappings (used across all pages)
